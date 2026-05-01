@@ -1,0 +1,159 @@
+/* Mengatur agar full screen dan tidak ada scrollbar di browser */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background-color: #eef2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; 
+}
+
+.container {
+    width: 96vw;
+    height: 94vh;
+    background-color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+h2 { font-size: 20px; margin: 0 0 15px 0; color: #333; }
+
+.main-layout {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1;
+    overflow: hidden; /* Mencegah kolom meluber */
+}
+
+/* Kolom Kiri - Dadu */
+.rolls-column {
+    width: 140px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fafafa;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.rolls-header {
+    background-color: #eaeaea;
+    text-align: center;
+    padding: 8px;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+}
+
+#diceContainer {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+/* --- Desain Dadu Realistis --- */
+.die-wrapper { text-align: center; }
+
+.die {
+    width: 44px;
+    height: 44px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.3);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 5px;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
+
+.pip {
+    width: 8px;
+    height: 8px;
+    background-color: #222;
+    border-radius: 50%;
+    justify-self: center;
+    align-self: center;
+    box-shadow: inset 0 2px 2px rgba(0,0,0,0.5);
+}
+
+.pip.red { 
+    background-color: #d93838; 
+    box-shadow: inset 0 2px 2px rgba(100,0,0,0.5); 
+    width: 12px; /* Dadu angka 1 biasanya titiknya lebih besar */
+    height: 12px;
+}
+
+/* Animasi Putar 3D */
+.rolling .die {
+    animation: roll-3d 0.4s infinite linear;
+}
+
+@keyframes roll-3d {
+    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    50% { transform: rotateX(180deg) rotateY(90deg) rotateZ(180deg) scale(1.1); }
+    100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+}
+
+.roll-num { font-size: 12px; color: #777; margin-top: 6px; font-weight: bold;}
+
+/* Kolom Kanan */
+.data-column { 
+    flex-grow: 1; 
+    display: flex; 
+    flex-direction: column; 
+    min-width: 0; 
+}
+
+.controls { margin-bottom: 15px; display: flex; align-items: center; }
+
+#numRolls {
+    padding: 8px; width: 80px; margin-right: 10px;
+    border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
+}
+
+.btn {
+    background-color: #007bb5; color: white; border: none;
+    padding: 9px 20px; margin-right: 8px; cursor: pointer;
+    border-radius: 4px; font-size: 14px; font-weight: bold;
+}
+
+.btn:hover { background-color: #005a87; }
+.btn.reset { background-color: #e0e0e0; color: #333; }
+.btn.reset:hover { background-color: #ccc; }
+
+table {
+    width: 100%; border-collapse: collapse; margin-bottom: 15px; text-align: center;
+}
+th, td { border: 1px solid #ccc; padding: 10px; }
+th { background-color: #eaeaea; }
+
+.tabs { margin-bottom: -1px; display: flex; }
+.tab {
+    background-color: #f1f1f1; border: 1px solid #ccc;
+    padding: 8px 20px; cursor: pointer; border-bottom: none; font-weight: bold;
+}
+.tab.active { background-color: #007bb5; color: white; border-color: #007bb5;}
+
+.chart-container {
+    flex-grow: 1; /* Memenuhi sisa tinggi yang ada */
+    border: 1px solid #ccc;
+    background-color: #fff;
+    position: relative;
+    padding: 15px;
+}
+
+.chart-wrapper {
+    height: 100%; width: 100%; position: relative;
+}
