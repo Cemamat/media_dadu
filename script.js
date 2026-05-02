@@ -1,6 +1,6 @@
 // Variabel Data
 let totalRolls = 0;
-let count1 = 0; // Diganti untuk melacak Angka 1
+let count1 = 0; 
 let frequencies = [0, 0, 0, 0, 0, 0];
 
 let convergenceLabels = [];
@@ -8,10 +8,10 @@ let observedProportions = [];
 let trueProportions = [];
 const TRUE_PROBABILITY = 1 / 6;
 
-// Konfigurasi Chart agar ukurannya mengikuti Container
+// Konfigurasi Chart
 const chartOptions = {
     responsive: true,
-    maintainAspectRatio: false, // Penting agar chart bisa ditarik secara dinamis
+    maintainAspectRatio: false,
     plugins: { legend: { display: false } }
 };
 
@@ -24,7 +24,6 @@ const outcomesChart = new Chart(ctxOutcomes, {
         datasets: [{
             label: 'Frequency',
             data: frequencies,
-            // Warna merah dipindahkan ke elemen pertama (Angka 1)
             backgroundColor: ['#d93838', 'gray', 'gray', 'gray', 'gray', 'gray'],
             borderColor: 'black',
             borderWidth: 1
@@ -68,13 +67,12 @@ const convergenceChart = new Chart(ctxConvergence, {
     }
 });
 
-// --- FUNGSI MENGGAMBAR TITIK DADU REALISTIS ---
+// --- FUNGSI VISUAL DADU ---
 function getDieHTML(value) {
     const p = '<div class="pip"></div>';
     const pRed = '<div class="pip red"></div>';
     const e = '<div></div>';
 
-    // Grid 3x3 untuk menentukan posisi titik dadu
     switch(value) {
         case 1: return `${e}${e}${e} ${e}${pRed}${e} ${e}${e}${e}`;
         case 2: return `${p}${e}${e} ${e}${e}${e} ${e}${e}${p}`;
@@ -93,17 +91,14 @@ function rollDice() {
         alert("Silakan masukkan angka antara 1 hingga 5000."); return;
     }
 
-    const diceContainer = document.getElementById('diceContainer');
-    diceContainer.innerHTML = ''; 
     let currentRolls = [];
-
     for (let i = 0; i < times; i++) {
         let roll = Math.floor(Math.random() * 6) + 1;
         currentRolls.push(roll);
         
         totalRolls++;
         frequencies[roll - 1]++;
-        if (roll === 1) count1++; // Menghitung kemunculan angka 1
+        if (roll === 1) count1++;
 
         convergenceLabels.push(totalRolls);
         observedProportions.push(count1 / totalRolls);
@@ -113,38 +108,38 @@ function rollDice() {
     renderAnimatedDice(currentRolls);
 }
 
+// --- PERBAIKAN PERFORMA ANIMASI (BATCH RENDERING) ---
 function renderAnimatedDice(rolls) {
     const diceContainer = document.getElementById('diceContainer');
     let startingRollNumber = totalRolls - rolls.length + 1;
 
+    // 1. Kumpulkan semua HTML dadu ke dalam satu string besar terlebih dahulu
+    let batchHTML = "";
     rolls.forEach((roll, index) => {
-        let wrapper = document.createElement('div');
-        wrapper.className = 'die-wrapper rolling'; // Tambah class rolling untuk animasi
-        
-        // Buat elemen dadu
-        let dieElement = document.createElement('div');
-        dieElement.className = 'die';
-        dieElement.innerHTML = getDieHTML(roll); // Dadu asli langsung dibuat tapi diputar
-        
-        let rollNum = document.createElement('div');
-        rollNum.className = 'roll-num';
-        rollNum.innerText = `#${startingRollNumber + index}`;
-
-        wrapper.appendChild(dieElement);
-        wrapper.appendChild(rollNum);
-        diceContainer.appendChild(wrapper);
-
-        // Hentikan putaran setelah 400ms
-        setTimeout(() => {
-            wrapper.classList.remove('rolling');
-        }, 400);
+        batchHTML += `
+            <div class="die-wrapper rolling new-roll">
+                <div class="die">${getDieHTML(roll)}</div>
+                <div class="roll-num">#${startingRollNumber + index}</div>
+            </div>
+        `;
     });
 
-    // Pindah scroll ke bawah
+    // 2. Suntikkan ke layar sekaligus (Sangat cepat dan tidak membuat browser freeze)
+    diceContainer.insertAdjacentHTML('beforeend', batchHTML);
+
+    // 3. Ambil dadu yang baru saja dimasukkan untuk menghentikan animasinya nanti
+    let newlyAddedDice = diceContainer.querySelectorAll('.new-roll');
+
+    // 4. Biarkan animasi berjalan selama 500ms, lalu hentikan serentak
     setTimeout(() => {
+        newlyAddedDice.forEach(wrapper => {
+            wrapper.classList.remove('rolling', 'new-roll');
+        });
+        
+        // Auto-scroll dan update grafik setelah animasi selesai
         diceContainer.scrollTop = diceContainer.scrollHeight;
         updateUI(); 
-    }, 400);
+    }, 500);
 }
 
 function updateUI() {
@@ -157,18 +152,20 @@ function updateUI() {
     convergenceChart.update();
 }
 
-// --- PENGATURAN TOMBOL & TAB ---
+// --- TOMBOL & NAVIGASI ---
 document.getElementById('btnRoll').addEventListener('click', rollDice);
 
 document.getElementById('btnReset').addEventListener('click', () => {
     totalRolls = 0; count1 = 0;
     frequencies.fill(0);
-    convergenceLabels.length = 0; observedProportions.length = 0; trueProportions.length = 0;
+    convergenceLabels.length = 0; 
+    observedProportions.length = 0; 
+    trueProportions.length = 0;
+    
     document.getElementById('diceContainer').innerHTML = '';
     updateUI();
 });
 
-// Navigasi Tab
 const tabOutcomes = document.getElementById('tabOutcomes');
 const tabConvergence = document.getElementById('tabConvergence');
 const sectionOutcomes = document.getElementById('outcomesSection');
