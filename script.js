@@ -2,10 +2,10 @@
 let totalRolls = 0;
 let count1 = 0; 
 let frequencies = [0, 0, 0, 0, 0, 0];
-
 let convergenceLabels = [];
 let observedProportions = [];
 let trueProportions = [];
+let diceHistory = []; // Untuk menyimpan daftar angka yang sudah keluar
 const TRUE_PROBABILITY = 1 / 6;
 
 // Konfigurasi Chart
@@ -15,7 +15,7 @@ const chartOptions = {
     plugins: { legend: { display: false } }
 };
 
-// --- GRAFIK OUTCOMES ---
+// --- INISIALISASI GRAFIK ---
 const ctxOutcomes = document.getElementById('outcomesChart').getContext('2d');
 const outcomesChart = new Chart(ctxOutcomes, {
     type: 'bar',
@@ -29,50 +29,68 @@ const outcomesChart = new Chart(ctxOutcomes, {
             borderWidth: 1
         }]
     },
-    options: {
-        ...chartOptions,
-        scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Frequency' } },
-            x: { title: { display: true, text: 'Mata Dadu' } }
-        }
-    }
+    options: { ...chartOptions, scales: { y: { beginAtZero: true } } }
 });
 
-// --- GRAFIK CONVERGENCE ---
 const ctxConvergence = document.getElementById('convergenceChart').getContext('2d');
 const convergenceChart = new Chart(ctxConvergence, {
     type: 'line',
     data: {
         labels: convergenceLabels,
         datasets: [
-            {
-                label: 'Observed Proportion (1)',
-                data: observedProportions,
-                borderColor: 'black', borderWidth: 1, pointRadius: 0, fill: false, tension: 0.1
-            },
-            {
-                label: 'True Probability (1/6)',
-                data: trueProportions,
-                borderColor: 'green', borderWidth: 1.5, pointRadius: 0, fill: false
-            }
+            { label: 'Observed', data: observedProportions, borderColor: 'black', borderWidth: 1, pointRadius: 0, fill: false },
+            { label: 'True', data: trueProportions, borderColor: 'green', borderWidth: 1.5, pointRadius: 0, fill: false }
         ]
     },
-    options: {
-        ...chartOptions,
-        animation: false,
-        scales: {
-            y: { min: 0, max: 1 },
-            x: { title: { display: true, text: 'Roll #' } }
-        }
-    }
+    options: { ...chartOptions, animation: false, scales: { y: { min: 0, max: 1 } } }
 });
+
+// --- FUNGSI LOCAL STORAGE (SIMPAN & MUAT DATA) ---
+function saveData() {
+    const dataToSave = {
+        totalRolls,
+        count1,
+        frequencies,
+        convergenceLabels,
+        observedProportions,
+        trueProportions,
+        diceHistory
+    };
+    localStorage.setItem('diceSimData', JSON.stringify(dataToSave));
+}
+
+function loadData() {
+    const savedData = localStorage.getItem('diceSimData');
+    if (savedData) {
+        const parsed = JSON.parse(savedData);
+        totalRolls = parsed.totalRolls;
+        count1 = parsed.count1;
+        frequencies = parsed.frequencies;
+        convergenceLabels = parsed.convergenceLabels;
+        observedProportions = parsed.observedProportions;
+        trueProportions = parsed.trueProportions;
+        diceHistory = parsed.diceHistory || [];
+
+        // Update Charts
+        outcomesChart.data.datasets[0].data = frequencies;
+        convergenceChart.data.labels = convergenceLabels;
+        convergenceChart.data.datasets[0].data = observedProportions;
+        convergenceChart.data.datasets[1].data = trueProportions;
+        
+        outcomesChart.update();
+        convergenceChart.update();
+        updateUI(false); // Update teks tanpa animasi scroll berlebih
+
+        // Tampilkan riwayat dadu yang tersimpan (tanpa animasi kocok)
+        renderSavedDice();
+    }
+}
 
 // --- FUNGSI VISUAL DADU ---
 function getDieHTML(value) {
     const p = '<div class="pip"></div>';
     const pRed = '<div class="pip red"></div>';
     const e = '<div></div>';
-
     switch(value) {
         case 1: return `${e}${e}${e} ${e}${pRed}${e} ${e}${e}${e}`;
         case 2: return `${p}${e}${e} ${e}${e}${e} ${e}${e}${p}`;
@@ -84,17 +102,33 @@ function getDieHTML(value) {
     }
 }
 
+function renderSavedDice() {
+    const diceContainer = document.getElementById('diceContainer');
+    let batchHTML = "";
+    diceHistory.forEach((roll, index) => {
+        batchHTML += `
+            <div class="die-wrapper">
+                <div class="die">${getDieHTML(roll)}</div>
+                <div class="roll-num">#${index + 1}</div>
+            </div>
+        `;
+    });
+    diceContainer.innerHTML = batchHTML;
+    diceContainer.scrollTop = diceContainer.scrollHeight;
+}
+
 // --- LOGIKA UTAMA ---
 function rollDice() {
     let times = parseInt(document.getElementById('numRolls').value);
     if (isNaN(times) || times < 1 || times > 5000) {
-        alert("Silakan masukkan angka antara 1 hingga 5000."); return;
+        alert("Masukkan angka 1 - 5000"); return;
     }
 
     let currentRolls = [];
     for (let i = 0; i < times; i++) {
         let roll = Math.floor(Math.random() * 6) + 1;
         currentRolls.push(roll);
+        diceHistory.push(roll); // Simpan ke history
         
         totalRolls++;
         frequencies[roll - 1]++;
@@ -106,14 +140,12 @@ function rollDice() {
     }
 
     renderAnimatedDice(currentRolls);
+    saveData(); // Simpan setiap kali selesai roll
 }
 
-// --- PERBAIKAN PERFORMA ANIMASI (BATCH RENDERING) ---
 function renderAnimatedDice(rolls) {
     const diceContainer = document.getElementById('diceContainer');
     let startingRollNumber = totalRolls - rolls.length + 1;
-
-    // 1. Kumpulkan semua HTML dadu ke dalam satu string besar terlebih dahulu
     let batchHTML = "";
     rolls.forEach((roll, index) => {
         batchHTML += `
@@ -124,25 +156,18 @@ function renderAnimatedDice(rolls) {
         `;
     });
 
-    // 2. Suntikkan ke layar sekaligus (Sangat cepat dan tidak membuat browser freeze)
     diceContainer.insertAdjacentHTML('beforeend', batchHTML);
-
-    // 3. Ambil dadu yang baru saja dimasukkan untuk menghentikan animasinya nanti
     let newlyAddedDice = diceContainer.querySelectorAll('.new-roll');
 
-    // 4. Biarkan animasi berjalan selama 500ms, lalu hentikan serentak
     setTimeout(() => {
-        newlyAddedDice.forEach(wrapper => {
-            wrapper.classList.remove('rolling', 'new-roll');
-        });
-        
-        // Auto-scroll dan update grafik setelah animasi selesai
+        newlyAddedDice.forEach(wrapper => wrapper.classList.remove('rolling', 'new-roll'));
         diceContainer.scrollTop = diceContainer.scrollHeight;
-        updateUI(); 
+        diceContainer.scrollLeft = diceContainer.scrollWidth;
+        updateUI(true); 
     }, 500);
 }
 
-function updateUI() {
+function updateUI(shouldSave) {
     document.getElementById('count1').innerText = count1;
     document.getElementById('totalRolls').innerText = totalRolls;
     let proportion = totalRolls === 0 ? 0 : (count1 / totalRolls);
@@ -156,27 +181,23 @@ function updateUI() {
 document.getElementById('btnRoll').addEventListener('click', rollDice);
 
 document.getElementById('btnReset').addEventListener('click', () => {
-    totalRolls = 0; count1 = 0;
-    frequencies.fill(0);
-    convergenceLabels.length = 0; 
-    observedProportions.length = 0; 
-    trueProportions.length = 0;
-    
-    document.getElementById('diceContainer').innerHTML = '';
-    updateUI();
+    if(confirm("Hapus semua data simulasi?")) {
+        localStorage.removeItem('diceSimData'); // Hapus memori permanen
+        location.reload(); // Refresh halaman untuk reset total
+    }
 });
 
-const tabOutcomes = document.getElementById('tabOutcomes');
-const tabConvergence = document.getElementById('tabConvergence');
-const sectionOutcomes = document.getElementById('outcomesSection');
-const sectionConvergence = document.getElementById('convergenceSection');
+// Load data otomatis saat halaman dibuka
+window.onload = loadData;
 
-tabOutcomes.addEventListener('click', () => {
-    tabOutcomes.classList.add('active'); tabConvergence.classList.remove('active');
-    sectionOutcomes.style.display = 'block'; sectionConvergence.style.display = 'none';
-});
-
-tabConvergence.addEventListener('click', () => {
-    tabConvergence.classList.add('active'); tabOutcomes.classList.remove('active');
-    sectionConvergence.style.display = 'block'; sectionOutcomes.style.display = 'none';
+// Tab Logic (Tetap sama)
+const tabs = document.querySelectorAll('.tab');
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const isConv = tab.id === 'tabConvergence';
+        document.getElementById('outcomesSection').style.display = isConv ? 'none' : 'block';
+        document.getElementById('convergenceSection').style.display = isConv ? 'block' : 'none';
+    });
 });
