@@ -5,28 +5,22 @@ let frequencies = [0, 0, 0, 0, 0, 0];
 let convergenceLabels = [];
 let observedProportions = [];
 let trueProportions = [];
-let diceHistory = []; // Untuk menyimpan daftar angka yang sudah keluar
+let diceHistory = []; 
 const TRUE_PROBABILITY = 1 / 6;
 
 // Konfigurasi Chart
-const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } }
-};
+const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
 
-// --- INISIALISASI GRAFIK ---
+// INISIALISASI GRAFIK
 const ctxOutcomes = document.getElementById('outcomesChart').getContext('2d');
 const outcomesChart = new Chart(ctxOutcomes, {
     type: 'bar',
     data: {
         labels: ['1', '2', '3', '4', '5', '6'],
         datasets: [{
-            label: 'Frequency',
-            data: frequencies,
+            label: 'Frequency', data: frequencies,
             backgroundColor: ['#d93838', 'gray', 'gray', 'gray', 'gray', 'gray'],
-            borderColor: 'black',
-            borderWidth: 1
+            borderColor: 'black', borderWidth: 1
         }]
     },
     options: { ...chartOptions, scales: { y: { beginAtZero: true } } }
@@ -45,17 +39,9 @@ const convergenceChart = new Chart(ctxConvergence, {
     options: { ...chartOptions, animation: false, scales: { y: { min: 0, max: 1 } } }
 });
 
-// --- FUNGSI LOCAL STORAGE (SIMPAN & MUAT DATA) ---
+// FUNGSI LOCAL STORAGE (SIMPAN & MUAT DATA)
 function saveData() {
-    const dataToSave = {
-        totalRolls,
-        count1,
-        frequencies,
-        convergenceLabels,
-        observedProportions,
-        trueProportions,
-        diceHistory
-    };
+    const dataToSave = { totalRolls, count1, frequencies, convergenceLabels, observedProportions, trueProportions, diceHistory };
     localStorage.setItem('diceSimData', JSON.stringify(dataToSave));
 }
 
@@ -63,34 +49,22 @@ function loadData() {
     const savedData = localStorage.getItem('diceSimData');
     if (savedData) {
         const parsed = JSON.parse(savedData);
-        totalRolls = parsed.totalRolls;
-        count1 = parsed.count1;
-        frequencies = parsed.frequencies;
-        convergenceLabels = parsed.convergenceLabels;
-        observedProportions = parsed.observedProportions;
-        trueProportions = parsed.trueProportions;
-        diceHistory = parsed.diceHistory || [];
+        totalRolls = parsed.totalRolls; count1 = parsed.count1; frequencies = parsed.frequencies;
+        convergenceLabels = parsed.convergenceLabels; observedProportions = parsed.observedProportions;
+        trueProportions = parsed.trueProportions; diceHistory = parsed.diceHistory || [];
 
-        // Update Charts
         outcomesChart.data.datasets[0].data = frequencies;
         convergenceChart.data.labels = convergenceLabels;
         convergenceChart.data.datasets[0].data = observedProportions;
         convergenceChart.data.datasets[1].data = trueProportions;
         
-        outcomesChart.update();
-        convergenceChart.update();
-        updateUI(false); // Update teks tanpa animasi scroll berlebih
-
-        // Tampilkan riwayat dadu yang tersimpan (tanpa animasi kocok)
-        renderSavedDice();
+        outcomesChart.update(); convergenceChart.update(); updateUI(); renderSavedDice();
     }
 }
 
-// --- FUNGSI VISUAL DADU ---
+// FUNGSI VISUAL DADU
 function getDieHTML(value) {
-    const p = '<div class="pip"></div>';
-    const pRed = '<div class="pip red"></div>';
-    const e = '<div></div>';
+    const p = '<div class="pip"></div>'; const pRed = '<div class="pip red"></div>'; const e = '<div></div>';
     switch(value) {
         case 1: return `${e}${e}${e} ${e}${pRed}${e} ${e}${e}${e}`;
         case 2: return `${p}${e}${e} ${e}${e}${e} ${e}${e}${p}`;
@@ -106,41 +80,29 @@ function renderSavedDice() {
     const diceContainer = document.getElementById('diceContainer');
     let batchHTML = "";
     diceHistory.forEach((roll, index) => {
-        batchHTML += `
-            <div class="die-wrapper">
-                <div class="die">${getDieHTML(roll)}</div>
-                <div class="roll-num">#${index + 1}</div>
-            </div>
-        `;
+        batchHTML += `<div class="die-wrapper"><div class="die">${getDieHTML(roll)}</div><div class="roll-num">#${index + 1}</div></div>`;
     });
     diceContainer.innerHTML = batchHTML;
     diceContainer.scrollTop = diceContainer.scrollHeight;
+    diceContainer.scrollLeft = diceContainer.scrollWidth;
 }
 
-// --- LOGIKA UTAMA ---
+// LOGIKA UTAMA
 function rollDice() {
     let times = parseInt(document.getElementById('numRolls').value);
-    if (isNaN(times) || times < 1 || times > 5000) {
-        alert("Masukkan angka 1 - 5000"); return;
-    }
+    if (isNaN(times) || times < 1 || times > 5000) { alert("Masukkan angka 1 - 5000"); return; }
 
     let currentRolls = [];
     for (let i = 0; i < times; i++) {
         let roll = Math.floor(Math.random() * 6) + 1;
-        currentRolls.push(roll);
-        diceHistory.push(roll); // Simpan ke history
+        currentRolls.push(roll); diceHistory.push(roll);
         
-        totalRolls++;
-        frequencies[roll - 1]++;
+        totalRolls++; frequencies[roll - 1]++;
         if (roll === 1) count1++;
 
-        convergenceLabels.push(totalRolls);
-        observedProportions.push(count1 / totalRolls);
-        trueProportions.push(TRUE_PROBABILITY);
+        convergenceLabels.push(totalRolls); observedProportions.push(count1 / totalRolls); trueProportions.push(TRUE_PROBABILITY);
     }
-
-    renderAnimatedDice(currentRolls);
-    saveData(); // Simpan setiap kali selesai roll
+    renderAnimatedDice(currentRolls); saveData();
 }
 
 function renderAnimatedDice(rolls) {
@@ -148,12 +110,7 @@ function renderAnimatedDice(rolls) {
     let startingRollNumber = totalRolls - rolls.length + 1;
     let batchHTML = "";
     rolls.forEach((roll, index) => {
-        batchHTML += `
-            <div class="die-wrapper rolling new-roll">
-                <div class="die">${getDieHTML(roll)}</div>
-                <div class="roll-num">#${startingRollNumber + index}</div>
-            </div>
-        `;
+        batchHTML += `<div class="die-wrapper rolling new-roll"><div class="die">${getDieHTML(roll)}</div><div class="roll-num">#${startingRollNumber + index}</div></div>`;
     });
 
     diceContainer.insertAdjacentHTML('beforeend', batchHTML);
@@ -163,34 +120,31 @@ function renderAnimatedDice(rolls) {
         newlyAddedDice.forEach(wrapper => wrapper.classList.remove('rolling', 'new-roll'));
         diceContainer.scrollTop = diceContainer.scrollHeight;
         diceContainer.scrollLeft = diceContainer.scrollWidth;
-        updateUI(true); 
+        updateUI(); 
     }, 500);
 }
 
-function updateUI(shouldSave) {
+function updateUI() {
     document.getElementById('count1').innerText = count1;
     document.getElementById('totalRolls').innerText = totalRolls;
     let proportion = totalRolls === 0 ? 0 : (count1 / totalRolls);
     document.getElementById('prop1').innerText = proportion.toFixed(4);
-    
-    outcomesChart.update();
-    convergenceChart.update();
+    outcomesChart.update(); convergenceChart.update();
 }
 
-// --- TOMBOL & NAVIGASI ---
+// TOMBOL & NAVIGASI
 document.getElementById('btnRoll').addEventListener('click', rollDice);
 
 document.getElementById('btnReset').addEventListener('click', () => {
     if(confirm("Hapus semua data simulasi?")) {
-        localStorage.removeItem('diceSimData'); // Hapus memori permanen
-        location.reload(); // Refresh halaman untuk reset total
+        localStorage.removeItem('diceSimData');
+        location.reload(); 
     }
 });
 
-// Load data otomatis saat halaman dibuka
+// Load data saat web dibuka
 window.onload = loadData;
 
-// Tab Logic (Tetap sama)
 const tabs = document.querySelectorAll('.tab');
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
