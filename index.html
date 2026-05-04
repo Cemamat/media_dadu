@@ -3,29 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulasi peluang pada pelemparan dadu</title>
+    <title>Simulasi Peluang Dadu</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+
     <div class="container">
         <h2>Simulasi peluang pada pelemparan dadu</h2>
         
         <div class="main-layout">
+            
             <div class="rolls-column">
                 <div class="rolls-header">Rolls</div>
-                <div id="diceContainer">
-                    </div>
+                <div id="diceContainer"></div>
             </div>
 
             <div class="data-column">
+                
                 <div class="controls">
-                    <input type="number" id="numRolls" min="1" max="5000" value="1">
+                    <input type="number" id="numRolls" value="1" min="1" max="5000" placeholder="Jml Roll">
                     <button id="btnRoll" class="btn">Roll</button>
                     <button id="btnReset" class="btn reset">Reset</button>
                 </div>
 
-                <table id="resultsTable">
+                <table>
                     <thead>
                         <tr>
                             <th>Event</th>
@@ -45,18 +47,22 @@
                 </table>
 
                 <div class="tabs">
-                    <button id="tabOutcomes" class="tab active">Outcomes</button>
-                    <button id="tabConvergence" class="tab">Convergence</button>
+                    <div class="tab active" id="tabOutcomes">Outcomes</div>
+                    <div class="tab" id="tabConvergence">Convergence</div>
                 </div>
 
-                <div class="chart-container">
-                    <div id="outcomesSection" class="chart-wrapper">
+                <div class="chart-container" id="outcomesSection">
+                    <div class="chart-wrapper">
                         <canvas id="outcomesChart"></canvas>
                     </div>
-                    <div id="convergenceSection" class="chart-wrapper" style="display: none;">
+                </div>
+
+                <div class="chart-container" id="convergenceSection" style="display: none;">
+                    <div class="chart-wrapper">
                         <canvas id="convergenceChart"></canvas>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
